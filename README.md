@@ -50,8 +50,3 @@ Alle API-kall håndteres med `async/await` for lesbar og effektiv asynkron kode,
 - Bruk av URL-parametre for dynamisk datahenting  
 - Effektiv håndtering av asynkrone operasjoner med løkker og `Promise.all`  
 - Bygge interaktiv brukergrensesnitt med dynamisk innhold  
-
----
-
-Takk for at du tok en titt!  
-© 2025 Pokémon API-prosjekt
