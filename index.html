@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Pokédex - GameBoy Edition</title>
+    <link rel="stylesheet" href="style.css" />
+    <!-- Retro font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <!-- GameBoy-ramme -->
+    <div class="gameboy-frame">
+      <!-- Appens hovedinnhold -->
+      <div class="app">
+        <header class="header">
+          <img
+            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+            alt="Pokéball"
+            class="pokeball-icon"
+          />
+          <h1>Pokédex</h1>
+          <img
+            src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png"
+            alt="Pokéball"
+            class="pokeball-icon"
+          />
+        </header>
+
+        <form id="search-form">
+          <input
+            type="text"
+            id="search-input"
+            placeholder="Søk etter Pokémon..."
+            autocomplete="off"
+          />
+          <button type="submit">Søk</button>
+          <!-- Favorittstjerne settes inn her av JS -->
+        </form>
+
+        <div class="selectors">
+          <select id="type-select">
+            <option value="">Velg type</option>
+          </select>
+          <select id="generation-select">
+            <option value="">Velg generasjon</option>
+          </select>
+        </div>
+
+        <button id="reset-btn">🔄 Nullstill</button>
+
+        <section id="pokemon-container"></section>
+
+        <section>
+          <h2>Dine favoritter</h2>
+          <div id="favorites-container"></div>
+        </section>
+
+        <!-- Panel for valgt Pokémon under søk -->
+        <section id="selected-pokemon-container" style="display: none">
+          <div class="selected-pokemon-card">
+            <img src="" alt="Valgt Pokémon" class="selected-pokemon-img" />
+            <div class="selected-pokemon-info"></div>
+            <div id="selected-pokemon-buttons">
+              <button id="add-favorite-btn" class="selected-btn">
+                Legg til favoritt
+              </button>
+              <button id="remove-selected-btn" class="selected-btn">
+                Fjern
+              </button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>
