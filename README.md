@@ -49,4 +49,8 @@ Alle API-kall håndteres med `async/await` for lesbar og effektiv asynkron kode,
 - Hvordan håndtere flere API-endepunkter i samme prosjekt  
 - Bruk av URL-parametre for dynamisk datahenting  
 - Effektiv håndtering av asynkrone operasjoner med løkker og `Promise.all`  
-- Bygge interaktiv brukergrensesnitt med dynamisk innhold  
+- Bygge interaktiv brukergrensesnitt med dynamisk innhold
+
+## 🌐 Live demo
+
+🎮 [Test ut dexen her!](https://vildesv.github.io/pokedex/)
