@@ -17,59 +17,79 @@ document.querySelector(".app").insertBefore(selectedPokemonContainer, container)
 // Variabel for valgt Pokémon
 let selectedPokemon = null;
 
-// Ved oppstart: hent type- og generasjonsvalg, og oppdater favoritter
+// Ved oppstart
 fetchTypes();
 fetchGenerations();
 updateFavorites();
 
 // HENT TYPER
 async function fetchTypes() {
-  const res = await fetch("https://pokeapi.co/api/v2/type");
-  const data = await res.json();
-  data.results.forEach(type => {
-    const option = document.createElement("option");
-    option.value = type.name;
-    option.textContent = capitalize(type.name);
-    typeSelect.appendChild(option);
-  });
+  try {
+    const res = await fetch("https://pokeapi.co/api/v2/type");
+    if (!res.ok) throw new Error("Klarte ikke å hente typer");
+
+    const data = await res.json();
+    data.results.forEach(type => {
+      const option = document.createElement("option");
+      option.value = type.name;
+      option.textContent = capitalize(type.name);
+      typeSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Feil ved henting av typer:", error);
+    alert("Kunne ikke laste Pokémon-typer. Sjekk nettverk og prøv igjen.");
+  }
 }
 
 // HENT GENERASJONER
 async function fetchGenerations() {
-  const res = await fetch("https://pokeapi.co/api/v2/generation");
-  const data = await res.json();
-  data.results.forEach((gen, i) => {
-    const option = document.createElement("option");
-    option.value = i + 1;
-    option.textContent = `Generasjon ${i + 1}`;
-    generationSelect.appendChild(option);
-  });
+  try {
+    const res = await fetch("https://pokeapi.co/api/v2/generation");
+    if (!res.ok) throw new Error("Klarte ikke å hente generasjoner");
+
+    const data = await res.json();
+    data.results.forEach((gen, i) => {
+      const option = document.createElement("option");
+      option.value = i + 1;
+      option.textContent = `Generasjon ${i + 1}`;
+      generationSelect.appendChild(option);
+    });
+  } catch (error) {
+    console.error("Feil ved henting av generasjoner:", error);
+    alert("Kunne ikke laste Pokémon-generasjoner. Sjekk nettverk og prøv igjen.");
+  }
 }
 
 // SØK PÅ NAVN
 searchForm.addEventListener("submit", async (e) => {
   e.preventDefault();
+
   const query = searchInput.value.trim().toLowerCase();
   if (!query) return;
-  const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${query}`);
-  if (res.ok) {
+
+  try {
+    const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${query}`);
+    if (!res.ok) throw new Error("Fant ikke Pokémon");
+
     const data = await res.json();
     clearSelectedPokemon();
     setSelectedPokemon(data);
-  } else {
+
+    // Nullstiller filtre og listen
+    typeSelect.value = "";
+    generationSelect.value = "";
+    container.innerHTML = "";
+
+  } catch (error) {
+    console.error("Feil ved søk:", error);
     alert("Fant ingen Pokémon med det navnet.");
   }
-  // Nullstill filtre og visning av Pokémon-listen
-  typeSelect.value = "";
-  generationSelect.value = "";
-  container.innerHTML = "";
 });
 
 // FILTER: Endring i type eller generasjon
 typeSelect.addEventListener("change", handleTypeOrGenChange);
 generationSelect.addEventListener("change", handleTypeOrGenChange);
 
-// Kombinert filtrering
 async function handleTypeOrGenChange() {
   const type = typeSelect.value;
   const gen = generationSelect.value;
@@ -81,42 +101,62 @@ async function handleTypeOrGenChange() {
 
   let pokemons = [];
 
-  // Hent Pokémon fra valgt generasjon
-  if (gen) {
-    const res = await fetch(`https://pokeapi.co/api/v2/generation/${gen}`);
-    const data = await res.json();
-    const species = data.pokemon_species;
+  try {
+    // Hent Pokémon fra valgt generasjon
+    if (gen) {
+      const res = await fetch(`https://pokeapi.co/api/v2/generation/${gen}`);
+      if (!res.ok) throw new Error("Kunne ikke hente generasjonsdata");
 
-    // Sorter Pokémon etter ID
-    species.sort((a, b) => {
-      const idA = parseInt(a.url.split("/")[6]);
-      const idB = parseInt(b.url.split("/")[6]);
-      return idA - idB;
-    });
+      const data = await res.json();
+      const species = data.pokemon_species;
 
-    // Hent full data for hver Pokémon
-    const promises = species.map(s =>
-      fetch(`https://pokeapi.co/api/v2/pokemon/${s.name}`).then(res => res.json())
-    );
-    pokemons = await Promise.all(promises);
-  } else {
-    // Hvis kun type er valgt
-    const res = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
-    const data = await res.json();
-    const promises = data.pokemon.map(p => fetch(p.pokemon.url).then(res => res.json()));
-    pokemons = await Promise.all(promises);
+      // Sorter etter ID
+      species.sort((a, b) => {
+        const idA = parseInt(a.url.split("/")[6]);
+        const idB = parseInt(b.url.split("/")[6]);
+        return idA - idB;
+      });
+
+      // Hent full Pokémon-data
+      const promises = species.map(s =>
+        fetch(`https://pokeapi.co/api/v2/pokemon/${s.name}`)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      );
+
+      pokemons = (await Promise.all(promises)).filter(p => p);
+
+    } else {
+      // Kun type valgt
+      const res = await fetch(`https://pokeapi.co/api/v2/type/${type}`);
+      if (!res.ok) throw new Error("Kunne ikke hente typedata");
+
+      const data = await res.json();
+
+      const promises = data.pokemon.map(p =>
+        fetch(p.pokemon.url)
+          .then(r => r.ok ? r.json() : null)
+          .catch(() => null)
+      );
+
+      pokemons = (await Promise.all(promises)).filter(p => p);
+    }
+
+    // Filtrer etter type hvis begge er valgt
+    if (gen && type) {
+      pokemons = pokemons.filter(p =>
+        p.types.some(t => t.type.name === type)
+      );
+    }
+
+    // Sorter og vis Pokémon
+    pokemons.sort((a, b) => a.id - b.id);
+    pokemons.forEach(p => renderPokemonCard(p, container));
+
+  } catch (error) {
+    console.error("Feil ved filtrering:", error);
+    alert("Kunne ikke hente Pokémon-data for valgt filter.");
   }
-
-  // Hvis både type og generasjon er valgt, filtrer etter type
-  if (gen && type) {
-    pokemons = pokemons.filter(p =>
-      p.types.some(t => t.type.name === type)
-    );
-  }
-
-  // Sorter og vis Pokémon
-  pokemons = pokemons.sort((a, b) => a.id - b.id);
-  pokemons.forEach(p => renderPokemonCard(p, container));
 }
 
 // VALGT POKÉMON
@@ -149,14 +189,14 @@ function setSelectedPokemon(pokemon) {
   });
 }
 
-// Fjern valgt Pokémon
+// FJERN VALGT POKÉMON
 function clearSelectedPokemon() {
   selectedPokemon = null;
   selectedPokemonContainer.innerHTML = "";
   container.innerHTML = "";
 }
 
-// FLIP-KORT
+// FLIP-KORT (visning av Pokémon)
 function renderPokemonCard(pokemon, parentContainer) {
   const card = document.createElement("div");
   card.className = "pokemon-card";
@@ -217,6 +257,7 @@ function renderPokemonCard(pokemon, parentContainer) {
 // FAVORITTER
 function toggleFavorite(name) {
   const favorites = getFavorites();
+
   if (favorites.includes(name)) {
     localStorage.setItem("favorites", JSON.stringify(favorites.filter(f => f !== name)));
   } else {
@@ -236,37 +277,36 @@ function isFavorite(name) {
 async function updateFavorites() {
   favoritesContainer.innerHTML = "";
   const favorites = getFavorites();
+
   for (const name of favorites) {
     try {
       const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${name}`);
-      if (res.ok) {
-        const data = await res.json();
-        renderPokemonCard(data, favoritesContainer);
-      }
+      if (!res.ok) throw new Error("Kunne ikke hente favoritt");
+
+      const data = await res.json();
+      renderPokemonCard(data, favoritesContainer);
+
     } catch (error) {
       console.error("Feil ved henting av favoritt:", error);
     }
   }
 }
 
-// Hjelpefunksjon: Gjør første bokstav stor
+// HJELPEFUNKSJONER
 function capitalize(str) {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-// NULLSTILL / RESET KNAPP
+// RESET KNAPP
 const resetBtn = document.getElementById("reset-btn");
 resetBtn.addEventListener("click", () => {
-  // Nullstill søk og filtervalg
   searchInput.value = "";
   typeSelect.value = "";
   generationSelect.value = "";
 
-  // Nullstill visninger
   clearSelectedPokemon();
   container.innerHTML = "";
 
-  // Oppdater favoritter på nytt (visning)
   updateFavorites();
 });
